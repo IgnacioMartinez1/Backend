@@ -1,0 +1,24 @@
+[
+  {
+    "id": "1745546331503",
+    "title": "Producto de ejemplo",
+    "description": "Descripción del producto",
+    "code": "ABC123",
+    "price": 100,
+    "status": true,
+    "stock": 50,
+    "category": "Categoría de ejemplo",
+    "thumbnails": ["ruta1.jpg", "ruta2.jpg"]
+  },
+  {
+    "id": "17432546331503",
+    "title": "Producto de ejemplo",
+    "description": "Descripción del producto",
+    "code": "ABC123",
+    "price": 100,
+    "status": true,
+    "stock": 50,
+    "category": "Categoría de ejemplo",
+    "thumbnails": ["ruta1.jpg", "ruta2.jpg"]
+  }
+]
