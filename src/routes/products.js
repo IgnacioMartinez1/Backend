@@ -1,35 +1,54 @@
-const express = require('express');
-const ProductManager = require('../managers/ProductManager');
-
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
 const router = express.Router();
-const productManager = new ProductManager('./data/products.json');
 
-router.get('/', async (req, res) => {
-  const products = await productManager.getAllProducts();
-  res.json(products);
+const productsFilePath = path.join(__dirname, "../data/products.json");
+
+// Leer productos desde el archivo JSON
+const readProducts = () => {
+  if (!fs.existsSync(productsFilePath)) {
+    return []; // Si el archivo no existe, retorna un array vacío
+  }
+  const data = fs.readFileSync(productsFilePath, "utf-8");
+  return JSON.parse(data);
+};
+
+// Guardar productos en el archivo JSON
+const saveProducts = (products) => {
+  fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2));
+};
+
+router.get("/", (req, res) => {
+  try {
+    const products = readProducts();
+    res.status(200).send(products);
+  } catch (error) {
+    console.error("Error al leer los productos:", error);
+    res.status(500).send({ error: "Error al leer los productos" });
+  }
 });
+// POST: Agregar un nuevo producto
+router.post("/", (req, res) => {
+  try {
+    const products = readProducts();
+    const newProduct = {
+      id: Date.now().toString(),
+      ...req.body,
+    };
 
-router.get('/:pid', async (req, res) => {
-  const product = await productManager.getProductById(req.params.pid);
-  if (product) res.json(product);
-  else res.status(404).json({ error: 'Product not found' });
-});
+    products.push(newProduct);
+    saveProducts(products);
 
-router.post('/', async (req, res) => {
-  const newProduct = await productManager.addProduct(req.body);
-  res.status(201).json(newProduct);
-});
+    // Emitir evento de actualización de productos
+    const io = req.app.get("io"); // Obtén la instancia de Socket.IO
+    io.emit("updateProducts", products);
 
-router.put('/:pid', async (req, res) => {
-  const updatedProduct = await productManager.updateProduct(req.params.pid, req.body);
-  if (updatedProduct) res.json(updatedProduct);
-  else res.status(404).json({ error: 'Product not found' });
-});
-
-router.delete('/:pid', async (req, res) => {
-  const success = await productManager.deleteProduct(req.params.pid);
-  if (success) res.json({ message: 'Product deleted' });
-  else res.status(404).json({ error: 'Product not found' });
+    res.status(201).send({ message: "Producto agregado", product: newProduct });
+  } catch (error) {
+    console.error("Error al agregar el producto:", error);
+    res.status(500).send({ error: "Error al agregar el producto" });
+  }
 });
 
 module.exports = router;
