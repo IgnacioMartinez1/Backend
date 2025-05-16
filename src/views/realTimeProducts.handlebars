@@ -1,34 +1,23 @@
-<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Productos en Tiempo Real</title>
-  <script src="/socket.io/socket.io.js"></script>
-</head>
-<body>
-  <h1>Lista de Productos en Tiempo Real</h1>
-  <ul id="product-list"></ul>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Productos en Tiempo Real</title>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <h1>Lista de Productos en Tiempo Real</h1>
+    <ul id="product-list"></ul>
 
-  <script>
-    const socket = io();
-
-    // Verificar conexión
-    socket.on("connect", function () {
-      console.log("Conectado al servidor de WebSocket");
-    });
-
-    // Escuchar actualizaciones de productos
-    socket.on("updateProducts", function (products) {
-      console.log("Productos recibidos:", products); // Log para depuración
-      const productList = document.getElementById("product-list");
-      productList.innerHTML = ""; // Limpiar la lista
-      products.forEach(function (product) {
-        const li = document.createElement("li");
-        li.textContent = product.title + " - $" + product.price;
-        productList.appendChild(li);
-      });
-    });
-  </script>
-</body>
+    <script>
+      const socket = io(); socket.on("connect", function () {
+      console.log("Conectado al servidor de WebSocket"); });
+      socket.on("updateProducts", function (products) { console.log("Productos
+      recibidos:", products); const productList =
+      document.getElementById("product-list"); productList.innerHTML = "";
+      products.forEach(function (product) { const li =
+      document.createElement("li"); li.textContent = product.title + " - $" +
+      product.price; productList.appendChild(li); }); });
+    </script>
+  </body>
 </html>

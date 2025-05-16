@@ -1,0 +1,30 @@
+
+<h1>Productos</h1>
+<a href="/carts/{{cartId}}">Ver mi carrito</a>
+<table border="1" cellpadding="8" cellspacing="0">
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Precio</th>
+      <th>Categoría</th>
+      <th>Stock</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each products}}
+      <tr>
+        <td>{{this.title}}</td>
+        <td>${{this.price}}</td>
+        <td>{{this.category}}</td>
+        <td>{{this.stock}}</td>
+        <td>
+          <form action="/api/carts/{{../cartId}}/products/{{this._id}}" method="POST" style="display:inline;">
+            <input type="number" name="quantity" value="1" min="1" max="{{this.stock}}" style="width:50px;" />
+            <button type="submit">Agregar al carrito</button>
+          </form>
+        </td>
+      </tr>
+    {{/each}}
+  </tbody>
+</table>

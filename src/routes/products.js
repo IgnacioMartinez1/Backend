@@ -1,53 +1,68 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
+const Product = require("../models/Product");
 const router = express.Router();
 
-const productsFilePath = path.join(__dirname, "../data/products.json");
-
-// Leer productos desde el archivo JSON
-const readProducts = () => {
-  if (!fs.existsSync(productsFilePath)) {
-    return []; // Si el archivo no existe, retorna un array vacío
-  }
-  const data = fs.readFileSync(productsFilePath, "utf-8");
-  return JSON.parse(data);
-};
-
-// Guardar productos en el archivo JSON
-const saveProducts = (products) => {
-  fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2));
-};
-
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const products = readProducts();
-    res.status(200).send(products);
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 1;
+    const sort =
+      req.query.sort === "asc" ? 1 : req.query.sort === "desc" ? -1 : null;
+    const query = req.query.query;
+
+    let filter = {};
+    if (query) {
+      if (query === "true" || query === "false") {
+        filter.status = query === "true";
+      } else {
+        filter.category = query;
+      }
+    }
+
+    const totalDocs = await Product.countDocuments(filter);
+    const totalPages = Math.ceil(totalDocs / limit);
+    let productsQuery = Product.find(filter);
+    if (sort) productsQuery = productsQuery.sort({ price: sort });
+    const products = await productsQuery.skip((page - 1) * limit).limit(limit);
+
+    const baseUrl = `${req.protocol}://${req.get("host")}${req.baseUrl}`;
+    const prevPage = page > 1 ? page - 1 : null;
+    const nextPage = page < totalPages ? page + 1 : null;
+
+    res.json({
+      status: "success",
+      payload: products,
+      totalPages,
+      prevPage,
+      nextPage,
+      page,
+      hasPrevPage: prevPage !== null,
+      hasNextPage: nextPage !== null,
+      prevLink: prevPage
+        ? `${baseUrl}?page=${prevPage}&limit=${limit}${
+            sort ? `&sort=${req.query.sort}` : ""
+          }${query ? `&query=${query}` : ""}`
+        : null,
+      nextLink: nextPage
+        ? `${baseUrl}?page=${nextPage}&limit=${limit}${
+            sort ? `&sort=${req.query.sort}` : ""
+          }${query ? `&query=${query}` : ""}`
+        : null,
+    });
   } catch (error) {
-    console.error("Error al leer los productos:", error);
-    res.status(500).send({ error: "Error al leer los productos" });
+    res.status(500).json({ status: "error", error: error.message });
   }
 });
+
 // POST: Agregar un nuevo producto
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   try {
-    const products = readProducts();
-    const newProduct = {
-      id: Date.now().toString(),
-      ...req.body,
-    };
-
-    products.push(newProduct);
-    saveProducts(products);
-
+    const newProduct = await Product.create(req.body);
     // Emitir evento de actualización de productos
-    const io = req.app.get("io"); // Obtén la instancia de Socket.IO
-    io.emit("updateProducts", products);
-
-    res.status(201).send({ message: "Producto agregado", product: newProduct });
+    req.app.get("io").emit("updateProducts", await Product.find());
+    res.status(201).json({ message: "Producto agregado", product: newProduct });
   } catch (error) {
-    console.error("Error al agregar el producto:", error);
-    res.status(500).send({ error: "Error al agregar el producto" });
+    res.status(500).json({ status: "error", error: error.message });
   }
 });
 

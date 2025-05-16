@@ -1,0 +1,61 @@
+<h1>Carrito</h1>
+<a href="/products">← Volver a productos</a>
+
+{{#if cart.products}}
+  {{#if cart.products.length}}
+    <table border="1" cellpadding="8" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Precio unitario</th>
+          <th>Subtotal</th>
+          <th>Eliminar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each cart.products}}
+          <tr data-product-id="{{this.product._id}}">
+            <td>{{this.product.title}}</td>
+            <td>{{this.quantity}}</td>
+            <td>${{this.product.price}}</td>
+            <td>${{multiply this.quantity this.product.price}}</td>
+            <td>
+              <form class="delete-product-form" action="/api/carts/{{../cart._id}}/products/{{this.product._id}}" method="POST" style="display:inline;">
+                <input type="hidden" name="_method" value="DELETE" />
+                <button type="submit">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    <form action="/api/carts/{{cart._id}}/purchase" method="POST" style="margin-top:20px;">
+      <button type="submit">Finalizar compra</button>
+    </form>
+ <script>
+  document.querySelectorAll('.delete-product-form').forEach(form => {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const url = form.action;
+      const row = form.closest('tr');
+      await fetch(url, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json' }
+      });
+      row.remove();
+
+      if (document.querySelectorAll('tbody tr').length === 0) {
+        location.reload();
+      }
+    });
+  });
+</script>
+  {{else}}
+    <p>El carrito está vacío.</p>
+    <a href="/products">Ir a productos</a>
+  {{/if}}
+{{else}}
+  <p>El carrito está vacío.</p>
+  <a href="/products">Ir a productos</a>
+{{/if}}

@@ -3,36 +3,75 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const { engine } = require("express-handlebars");
 const path = require("path");
+const mongoose = require("mongoose");
+const Cart = require("./models/Cart");
 
 const productRoutes = require("./routes/products");
+const cartRoutes = require("./routes/carts");
+const viewsRouter = require("./routes/views");
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
-
+const methodOverride = require("method-override");
+app.use(methodOverride("_method"));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Configurar Handlebars
-app.engine("handlebars", engine());
+const handlebars = require("handlebars");
+
+app.engine(
+  "handlebars",
+  engine({
+    handlebars: handlebars,
+    runtimeOptions: {
+      allowProtoPropertiesByDefault: true,
+      allowProtoMethodsByDefault: true,
+    },
+    helpers: {
+      multiply: (a, b) => a * b,
+    },
+  })
+);
 app.set("view engine", "handlebars");
 app.set("views", path.join(__dirname, "views"));
 
-// Ruta para la vista "realTimeProducts"
+mongoose
+  .connect("mongodb://localhost:27017/EntregaFinal", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("MongoDB conectado"))
+  .catch((err) => console.error("Error de conexión a MongoDB:", err));
+
+app.set("io", io);
+
+app.use("/api/products", productRoutes);
+app.use("/api/carts", cartRoutes);
+
+app.use("/", viewsRouter);
+
 app.get("/realtimeproducts", (req, res) => {
   res.render("realTimeProducts");
 });
 
-// Configurar rutas de productos
-app.set("io", io); // Hacer que la instancia de Socket.IO esté disponible en toda la app
-app.use("/api/products", productRoutes);
-
-// Configurar Socket.IO
 io.on("connection", (socket) => {
   console.log("Nuevo cliente conectado");
 });
 
-const PORT = 8080;
-httpServer.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
+mongoose.connection.once("open", async () => {
+  let cart = await Cart.findOne();
+  if (!cart) {
+    cart = await Cart.create({ products: [] });
+    console.log("Carrito de prueba creado:", cart._id);
+  } else {
+    console.log("Carrito de prueba existente:", cart._id);
+  }
+  app.set("testCartId", cart._id.toString());
+
+  const PORT = 8080;
+  httpServer.listen(PORT, () => {
+    console.log(`Servidor escuchando en http://localhost:${PORT}`);
+  });
 });
