@@ -5,10 +5,15 @@ const { engine } = require("express-handlebars");
 const path = require("path");
 const mongoose = require("mongoose");
 const Cart = require("./models/Cart");
+const passport = require("passport");
+const flash = require("connect-flash");
+const session = require("express-session");
 
 const productRoutes = require("./routes/products");
 const cartRoutes = require("./routes/carts");
-const viewsRouter = require("./routes/views");
+// const viewsRouter = require("./routes/views"); // No usar para "/"
+const userRoutes = require("./routes/users");
+const sessionRoutes = require("./routes/sessions");
 
 const app = express();
 const httpServer = createServer(app);
@@ -47,13 +52,57 @@ mongoose
 
 app.set("io", io);
 
+// Middleware de sesión y flash antes de passport
+app.use(session({ secret: "secret", resave: false, saveUninitialized: false }));
+app.use(flash());
+const initializePassport = require("./config/passport");
+initializePassport();
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use("/api/products", productRoutes);
 app.use("/api/carts", cartRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/sessions", sessionRoutes);
 
-app.use("/", viewsRouter);
+// Página principal con formularios de login y registro
+app.get("/", (req, res) => {
+  res.render("home", {
+    error: req.flash("error"),
+    success: req.flash("success"),
+    user: req.user,
+  });
+});
 
 app.get("/realtimeproducts", (req, res) => {
   res.render("realTimeProducts");
+});
+
+// Registro de usuario usando passport "register"
+app.post(
+  "/register",
+  passport.authenticate("register", {
+    successRedirect: "/",
+    failureRedirect: "/",
+    failureFlash: true,
+  })
+);
+
+// Login de usuario usando passport "login"
+app.post(
+  "/login",
+  passport.authenticate("login", {
+    successRedirect: "/",
+    failureRedirect: "/",
+    failureFlash: true,
+  })
+);
+
+// Logout
+app.get("/logout", (req, res) => {
+  req.logout(() => {
+    res.redirect("/");
+  });
 });
 
 io.on("connection", (socket) => {
