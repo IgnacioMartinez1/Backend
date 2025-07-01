@@ -11,7 +11,7 @@ const session = require("express-session");
 
 const productRoutes = require("./routes/products");
 const cartRoutes = require("./routes/carts");
-// const viewsRouter = require("./routes/views"); // No usar para "/"
+
 const userRoutes = require("./routes/users");
 const sessionRoutes = require("./routes/sessions");
 
@@ -52,7 +52,6 @@ mongoose
 
 app.set("io", io);
 
-// Middleware de sesión y flash antes de passport
 app.use(session({ secret: "secret", resave: false, saveUninitialized: false }));
 app.use(flash());
 const initializePassport = require("./config/passport");
@@ -65,7 +64,6 @@ app.use("/api/carts", cartRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/sessions", sessionRoutes);
 
-// Página principal con formularios de login y registro
 app.get("/", (req, res) => {
   res.render("home", {
     error: req.flash("error"),
@@ -78,7 +76,6 @@ app.get("/realtimeproducts", (req, res) => {
   res.render("realTimeProducts");
 });
 
-// Registro de usuario usando passport "register"
 app.post(
   "/register",
   passport.authenticate("register", {
@@ -88,7 +85,6 @@ app.post(
   })
 );
 
-// Login de usuario usando passport "login"
 app.post(
   "/login",
   passport.authenticate("login", {

@@ -5,9 +5,8 @@ const { createHash, isValidPassword } = require("../utils/hash");
 const passport = require("passport");
 const router = express.Router();
 
-const JWT_SECRET = "jwtSecret"; // Usa variable de entorno en producción
+const JWT_SECRET = "jwtSecret";
 
-// Registro
 router.post("/register", async (req, res) => {
   try {
     const { first_name, last_name, email, age, password } = req.body;
@@ -26,7 +25,6 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// Login (API/JWT)
 router.post("/login", (req, res, next) => {
   passport.authenticate("login", { session: false }, (err, user, info) => {
     if (err) return next(err);
@@ -41,7 +39,6 @@ router.post("/login", (req, res, next) => {
   })(req, res, next);
 });
 
-// Current (requiere JWT)
 router.get(
   "/current",
   passport.authenticate("jwt", { session: false }),

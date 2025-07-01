@@ -54,11 +54,10 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST: Agregar un nuevo producto
 router.post("/", async (req, res) => {
   try {
     const newProduct = await Product.create(req.body);
-    // Emitir evento de actualización de productos
+
     req.app.get("io").emit("updateProducts", await Product.find());
     res.status(201).json({ message: "Producto agregado", product: newProduct });
   } catch (error) {

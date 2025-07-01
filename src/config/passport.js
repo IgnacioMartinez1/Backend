@@ -5,7 +5,6 @@ const userModel = require("../models/User");
 const { createHash, isValidPassword } = require("../utils/hash");
 
 const initializePassport = () => {
-  // Estrategia de registro
   passport.use(
     "register",
     new LocalStrategy(
@@ -35,7 +34,6 @@ const initializePassport = () => {
     )
   );
 
-  // Estrategia de login
   passport.use(
     "login",
     new LocalStrategy(
@@ -55,13 +53,12 @@ const initializePassport = () => {
     )
   );
 
-  // Estrategia JWT
   passport.use(
     "jwt",
     new JwtStrategy(
       {
         jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-        secretOrKey: "jwtSecret", // Usa variable de entorno en producción
+        secretOrKey: "jwtSecret",
       },
       async (jwt_payload, done) => {
         try {
